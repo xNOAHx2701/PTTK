@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Hệ thống Quản lý Thiết bị</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;background:#f0f2f5;color:#1a1a2e}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+input,select,textarea,button{font-family:inherit;font-size:14px}
+/* ===== TOKENS ===== */
+:root{
+  --blue:#3b82f6;--blue2:#2563eb;--purple:#7c3aed;--green:#059669;--amber:#d97706;--red:#dc2626;--teal:#0891b2;
+  --bg:#f0f2f5;--card:#ffffff;--sidebar:#1e293b;--sidebar2:#0f172a;
+  --border:#e2e8f0;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;
+  --r:8px;--r2:12px;
+}
+/* ===== LOGIN ===== */
+#login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);z-index:999}
+.login-box{width:400px;background:#fff;border-radius:16px;padding:2.5rem;box-shadow:0 25px 60px rgba(0,0,0,0.3)}
+.login-logo{text-align:center;margin-bottom:1.5rem}
+.login-logo-icon{width:60px;height:60px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:.75rem}
+.login-logo h1{font-size:20px;font-weight:700;color:var(--text)}
+.login-logo p{font-size:12px;color:var(--text2);margin-top:2px}
+.field-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);display:block;margin-bottom:5px}
+.field-input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r);outline:none;transition:.2s;background:#f8fafc}
+.field-input:focus{border-color:var(--blue);background:#fff}
+.fgroup{margin-bottom:1rem}
+.role-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
+.rbtn{padding:10px 4px;border:1.5px solid var(--border);border-radius:var(--r);cursor:pointer;text-align:center;font-size:12px;font-weight:600;background:#f8fafc;color:var(--text2);transition:.15s;line-height:1.4}
+.rbtn:hover{border-color:#93c5fd;color:var(--blue)}
+.rbtn.r-kho{border-color:var(--blue);background:#eff6ff;color:var(--blue)}
+.rbtn.r-ql{border-color:var(--purple);background:#f5f3ff;color:var(--purple)}
+.rbtn.r-dv{border-color:var(--green);background:#ecfdf5;color:var(--green)}
+.login-btn{width:100%;padding:11px;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;transition:.15s}
+.login-btn:hover{opacity:.9}
+.login-err{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:9px 12px;border-radius:var(--r);font-size:13px;margin-bottom:1rem;display:none}
+.login-hint{text-align:center;font-size:11px;color:var(--text3);margin-top:.75rem}
+/* ===== APP SHELL ===== */
+#app{display:none;height:100vh;flex-direction:column}
+.topbar{height:56px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.25rem;gap:12px;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.tb-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;flex-shrink:0}
+.tb-title{font-size:15px;font-weight:700;color:var(--text)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.user-pill{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border:1px solid var(--border);border-radius:20px;background:#f8fafc}
+.user-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+.av-kho{background:#dbeafe;color:var(--blue)}.av-ql{background:#ede9fe;color:var(--purple)}.av-dv{background:#d1fae5;color:var(--green)}
+.user-info .uname{font-size:13px;font-weight:600}.user-info .urole{font-size:11px;color:var(--text2)}
+.btn-logout{padding:6px 14px;border:1px solid #fecaca;border-radius:var(--r);color:var(--red);background:#fff;cursor:pointer;font-size:12px;font-weight:600;transition:.15s}
+.btn-logout:hover{background:#fef2f2}
+.app-body{display:flex;flex:1;overflow:hidden}
+/* ===== SIDEBAR ===== */
+.sidebar{width:230px;background:var(--sidebar);flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto}
+.sb-section{padding:.75rem .75rem .25rem}
+.sb-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#64748b;padding:0 .5rem;margin-bottom:4px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;color:#94a3b8;font-size:13px;font-weight:500;transition:.12s;position:relative}
+.sb-item:hover{background:rgba(255,255,255,.07);color:#e2e8f0}
+.sb-item.active{background:rgba(59,130,246,.2);color:#93c5fd}
+.sb-icon{font-size:15px;width:20px;text-align:center}
+.sb-badge{margin-left:auto;background:rgba(255,255,255,.1);color:#94a3b8;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.sb-item.active .sb-badge{background:rgba(59,130,246,.3);color:#93c5fd}
+/* ===== MAIN ===== */
+.main{flex:1;overflow-y:auto;padding:1.5rem}
+/* ===== COMMON COMPONENTS ===== */
+.page-hd{margin-bottom:1.25rem}
+.page-hd h2{font-size:20px;font-weight:700;margin-bottom:3px}
+.page-hd p{font-size:13px;color:var(--text2)}
+.prereq{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r);font-size:13px;color:#92400e;margin-bottom:1.25rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:1.25rem}
+.card-title{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem}
+.btn{padding:7px 16px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;transition:.12s;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn-primary:hover{background:var(--blue2)}
+.btn-success{background:var(--green);color:#fff}.btn-success:hover{opacity:.9}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{opacity:.9}
+.btn-warning{background:var(--amber);color:#fff}.btn-warning:hover{opacity:.9}
+.btn-ghost{background:#fff;color:var(--text2);border-color:var(--border)}.btn-ghost:hover{background:#f1f5f9;color:var(--text)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.25rem}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:1rem 1.25rem}
+.stat-num{font-size:28px;font-weight:800;line-height:1;margin-bottom:3px}
+.stat-lbl{font-size:12px;color:var(--text2)}
+.stat.blue .stat-num{color:var(--blue)}.stat.green .stat-num{color:var(--green)}.stat.amber .stat-num{color:var(--amber)}.stat.red .stat-num{color:var(--red)}.stat.purple .stat-num{color:var(--purple)}
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{background:#f8fafc;padding:9px 12px;text-align:left;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+tr:hover td{background:#f8fafc}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700}
+.b-blue{background:#dbeafe;color:var(--blue)}.b-green{background:#d1fae5;color:var(--green)}.b-red{background:#fee2e2;color:var(--red)}.b-amber{background:#fef3c7;color:var(--amber)}.b-purple{background:#ede9fe;color:var(--purple)}.b-teal{background:#cffafe;color:var(--teal)}.b-gray{background:#f1f5f9;color:#64748b}
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal{background:#fff;border-radius:var(--r2);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.2)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)}
+.modal-hd h3{font-size:16px;font-weight:700}
+.modal-close{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--text2)}
+.modal-close:hover{background:#f1f5f9}
+.modal-body{padding:1.5rem}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
+.frow.full{grid-template-columns:1fr}
+/* FORM */
+select.field-input option{background:#fff}
+textarea.field-input{resize:vertical;min-height:80px}
+.val-err{font-size:12px;color:var(--red);margin-top:3px}
+/* FLOW STEP (sequence) */
+.seq-flow{display:flex;flex-direction:column;gap:0}
+.seq-step{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.seq-step:last-child{border-bottom:none}
+.seq-num{min-width:22px;height:22px;border-radius:50%;background:#dbeafe;color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.seq-alt{margin:6px 0;border-left:2px solid var(--border);padding-left:10px}
+.seq-alt-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:3px}
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast-item{padding:12px 18px;border-radius:var(--r);font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.15);animation:fadeSlide .3s ease;display:flex;align-items:center;gap:8px}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.t-success{background:var(--green);color:#fff}.t-error{background:var(--red);color:#fff}.t-info{background:var(--blue);color:#fff}
+/* TABS inside page */
+.ptabs{display:flex;gap:4px;margin-bottom:1.25rem;border-bottom:1px solid var(--border);padding-bottom:0}
+.ptab{padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s}
+.ptab:hover{color:var(--text)}
+.ptab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.ptab-content{display:none}.ptab-content.active{display:block}
+/* EMPTY */
+.empty{text-align:center;padding:3rem;color:var(--text3)}
+.empty .empty-icon{font-size:40px;margin-bottom:.5rem}
+.empty p{font-size:13px}
+/* DETAIL VIEW */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.info-field label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text2);margin-bottom:3px;display:block}
+.info-field p{font-size:14px;font-weight:500}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .frow{grid-template-columns:1fr}
+  .info-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">📦</div>
+      <h1>Quản lý Thiết bị</h1>
+      <p>Equipment Management System</p>
+    </div>
+    <div class="login-err" id="lerr">Tài khoản hoặc mật khẩu không đúng.</div>
+    <div class="fgroup">
+      <label class="field-label">Vai trò</label>
+      <div class="role-row">
+        <div class="rbtn r-kho" id="rb-kho" onclick="selRole('kho')">📦<br>Nhân viên kho</div>
+        <div class="rbtn" id="rb-ql" onclick="selRole('ql')">👔<br>Quản lý</div>
+        <div class="rbtn" id="rb-dv" onclick="selRole('dv')">🏢<br>Đơn vị SD</div>
+      </div>
+    </div>
+    <div class="fgroup"><label class="field-label">Tài khoản</label><input class="field-input" id="lu" placeholder="Nhập tên đăng nhập..."></div>
+    <div class="fgroup"><label class="field-label">Mật khẩu</label><input class="field-input" id="lp" type="password" placeholder="Nhập mật khẩu..."></div>
+    <button class="login-btn" onclick="login()">Đăng nhập vào hệ thống</button>
+    <p class="login-hint">Demo: tài khoản bất kỳ • mật khẩu: <b>123</b></p>
+  </div>
+</div>
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-logo">📦</div>
+    <div class="tb-title">Quản lý Thiết bị</div>
+    <div class="tb-right">
+      <div class="user-pill">
+        <div class="user-av" id="av"></div>
+        <div class="user-info"><div class="uname" id="uname"></div><div class="urole" id="urole"></div></div>
+      </div>
+      <button class="btn-logout" onclick="logout()">← Đăng xuất</button>
+    </div>
+  </div>
+  <div class="app-body">
+    <div class="sidebar" id="sb"></div>
+    <div class="main" id="main"></div>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="modal-root"></div>
+
+<script>
+/* ═══════════════════════════════
+   STORAGE
+═══════════════════════════════ */
+const STORE_KEY = 'qlthietbi_v1';
+function loadStore(){
+  try{return JSON.parse(localStorage.getItem(STORE_KEY))||initStore();}catch{return initStore();}
+}
+function saveStore(){localStorage.setItem(STORE_KEY,JSON.stringify(S));}
+function initStore(){
+  return {
+    thietbi:[
+      {id:'TB001',ten:'Máy tính Dell OptiPlex',loai:'Máy tính',so_luong:10,so_luong_kho:8,don_vi:'Cái',tinh_trang:'Tốt',gia:15000000,ghichu:''},
+      {id:'TB002',ten:'Máy chiếu Epson',loai:'Máy chiếu',so_luong:3,so_luong_kho:3,don_vi:'Cái',tinh_trang:'Tốt',gia:12000000,ghichu:''},
+      {id:'TB003',ten:'Máy in HP LaserJet',loai:'Máy in',so_luong:5,so_luong_kho:4,don_vi:'Cái',tinh_trang:'Tốt',gia:5500000,ghichu:''},
+      {id:'TB004',ten:'Điều hoà Daikin 1.5HP',loai:'Điều hoà',so_luong:6,so_luong_kho:6,don_vi:'Cái',tinh_trang:'Tốt',gia:9000000,ghichu:''},
+      {id:'TB005',ten:'Tivi Samsung 55"',loai:'Tivi',so_luong:2,so_luong_kho:2,don_vi:'Cái',tinh_trang:'Tốt',gia:14000000,ghichu:''},
+    ],
+    nhap_kho:[],
+    xuat_kho:[],
+    kiem_ke:[],
+    yeu_cau:[
+      {id:'YC001',tieu_chi:'Máy tính Dell OptiPlex',tb_id:'TB001',so_luong:2,don_vi_yc:'Phòng Kế toán',nguoi_tao:'NV01',ngay_tao:'2025-01-10',trang_thai:'Đang chờ duyệt',ghichu:'Phục vụ công việc hàng ngày'},
+      {id:'YC002',tieu_chi:'Máy chiếu Epson',tb_id:'TB002',so_luong:1,don_vi_yc:'Phòng Họp A',nguoi_tao:'NV02',ngay_tao:'2025-01-11',trang_thai:'Đã duyệt',ghichu:'Họp hội đồng'},
+    ],
+    bo_sung:[],
+    bao_tri:[
+      {id:'BT001',tb_id:'TB001',ten_tb:'Máy tính Dell OptiPlex',loai:'Bảo dưỡng định kỳ',ngay_lap:'2025-01-05',ngay_du_kien:'2025-01-20',trang_thai:'Đang thực hiện',ky_thuat_vien:'Nguyễn Văn A',chi_phi:500000,ghichu:''},
+    ],
+    tb_hong:[
+      {id:'TH001',tb_id:'TB003',ten_tb:'Máy in HP LaserJet',mo_ta_loi:'Kẹt giấy, không in được',nguoi_ghi_nhan:'QL01',ngay_ghi:'2025-01-09',tinh_trang_danh_gia:'',trang_thai:'Chờ đánh giá',lich_sua_chua:'',ghichu:''},
+    ],
+    nha_cung_cap:[
+      {id:'NCC001',ten:'Công ty CP Thiết bị Văn phòng ABC',ma_so_thue:'0123456789',dien_thoai:'0901234567',email:'abc@email.com',dia_chi:'123 Nguyễn Văn Linh, Q7, TP.HCM',nguoi_lien_he:'Trần Thị B',trang_thai:'Đang hợp tác',ghichu:''},
+      {id:'NCC002',ten:'Công ty TNHH Công nghệ XYZ',ma_so_thue:'9876543210',dien_thoai:'0912345678',email:'xyz@tech.vn',dia_chi:'456 Lê Văn Việt, Q9, TP.HCM',nguoi_lien_he:'Lê Văn C',trang_thai:'Đang hợp tác',ghichu:''},
+    ],
+    hop_dong:[
+      {id:'HD001',ncc_id:'NCC001',so_hop_dong:'HĐ-2024-001',ngay_ky:'2024-01-15',ngay_het_han:'2025-01-15',gia_tri:250000000,noi_dung:'Cung cấp máy tính và thiết bị văn phòng',trang_thai:'Còn hiệu lực'},
+    ],
+    thanh_toan:[
+      {id:'TT001',ncc_id:'NCC001',hop_dong_id:'HD001',so_tien:125000000,ngay_thanh_toan:'2024-07-15',hinh_thuc:'Chuyển khoản',ghi_chu:'Thanh toán đợt 1'},
+    ],
+    tai_chinh:[],
+    ngan_sach:{tong:500000000,da_su_dung:250000000},
+    bao_cao:[],
+    seq_counter:{tb:6,nhap:1,xuat:1,yk:1,yc:3,bs:1,bt:2,th:2,ncc:3,hd:2,tt:2,tc:1,bc:1,kk:1},
+  };
+}
+
+let S = loadStore();
+if(!S.ngan_sach)S.ngan_sach={tong:500000000,da_su_dung:250000000};
+
+function nextId(prefix,key){
+  S.seq_counter[key]=(S.seq_counter[key]||1)+1;
+  const n=String(S.seq_counter[key]).padStart(3,'0');
+  saveStore();
+  return prefix+n;
+}
+function fmt(n){return new Intl.NumberFormat('vi-VN').format(n)+'đ';}
+function fmtNum(n){return new Intl.NumberFormat('vi-VN').format(n);}
+function today(){return new Date().toISOString().split('T')[0];}
+
+/* ═══════════════════════════════
+   AUTH
+═══════════════════════════════ */
+let currentRole='kho',currentUser='';
+const ROLES={kho:{lbl:'Nhân viên kho',avcls:'av-kho'},ql:{lbl:'Quản lý',avcls:'av-ql'},dv:{lbl:'Đơn vị sử dụng',avcls:'av-dv'}};
+
+function selRole(r){
+  currentRole=r;
+  ['kho','ql','dv'].forEach(x=>{document.getElementById('rb-'+x).className='rbtn';});
+  const cls={kho:'r-kho',ql:'r-ql',dv:'r-dv'}[r];
+  document.getElementById('rb-'+r).classList.add(cls);
+}
+function login(){
+  const u=document.getElementById('lu').value.trim();
+  const p=document.getElementById('lp').value.trim();
+  if(!u||p!=='123'){document.getElementById('lerr').style.display='block';return;}
+  document.getElementById('lerr').style.display='none';
+  currentUser=u;
+  document.getElementById('login').style.display='none';
+  const app=document.getElementById('app');
+  app.style.display='flex';
+  const r=ROLES[currentRole];
+  const av=document.getElementById('av');
+  av.className='user-av '+r.avcls;
+  av.textContent=u.substring(0,2).toUpperCase();
+  document.getElementById('uname').textContent=u;
+  document.getElementById('urole').textContent=r.lbl;
+  buildSidebar();
+  nav('dashboard');
+}
+function logout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login').style.display='flex';
+  document.getElementById('lu').value='';
+  document.getElementById('lp').value='';
+}
+
+/* ═══════════════════════════════
+   SIDEBAR & NAV
+═══════════════════════════════ */
+const NAVS={
+  kho:[
+    {id:'dashboard',icon:'🏠',lbl:'Dashboard'},
+    {id:'thietbi',icon:'📋',lbl:'Danh sách thiết bị'},
+    {id:'nhapkho',icon:'📥',lbl:'Nhập kho'},
+    {id:'xuatkho',icon:'📤',lbl:'Xuất kho'},
+    {id:'kiemke',icon:'🔍',lbl:'Kiểm kê thiết bị'},
+    {id:'baocao',icon:'📊',lbl:'Báo cáo'},
+  ],
+  ql:[
+    {id:'dashboard',icon:'🏠',lbl:'Dashboard'},
+    {id:'thietbi',icon:'📋',lbl:'Danh sách thiết bị'},
+    {id:'duyetyc',icon:'✅',lbl:'Duyệt yêu cầu'},
+    {id:'baotri',icon:'🔧',lbl:'Quản lý bảo trì'},
+    {id:'tbhong',icon:'⚠️',lbl:'Thiết bị hỏng'},
+    {id:'ncc',icon:'🏭',lbl:'Nhà cung cấp'},
+    {id:'taichinh',icon:'💰',lbl:'Tài chính & Ngân sách'},
+    {id:'baocao',icon:'📊',lbl:'Báo cáo'},
+  ],
+  dv:[
+    {id:'dashboard',icon:'🏠',lbl:'Dashboard'},
+    {id:'thietbi',icon:'📋',lbl:'Xem thiết bị'},
+    {id:'taoyc',icon:'📝',lbl:'Tạo yêu cầu'},
+    {id:'theodoiyc',icon:'👁️',lbl:'Theo dõi yêu cầu'},
+    {id:'bosungtb',icon:'➕',lbl:'Bổ sung thiết bị mới'},
+  ],
+};
+function buildSidebar(){
+  const items=NAVS[currentRole];
+  document.getElementById('sb').innerHTML=`<div class="sb-section"><div class="sb-lbl">Menu chính</div>${
+    items.map(i=>`<div class="sb-item" id="sb-${i.id}" onclick="nav('${i.id}')"><span class="sb-icon">${i.icon}</span><span>${i.lbl}</span></div>`).join('')
+  }</div>`;
+}
+function nav(page){
+  document.querySelectorAll('.sb-item').forEach(e=>e.classList.remove('active'));
+  const sb=document.getElementById('sb-'+page);
+  if(sb)sb.classList.add('active');
+  const pages={
+    dashboard:pgDashboard,thietbi:pgThietBi,nhapkho:pgNhapKho,xuatkho:pgXuatKho,
+    kiemke:pgKiemKe,duyetyc:pgDuyetYC,baotri:pgBaoTri,tbhong:pgTBHong,
+    ncc:pgNCC,taichinh:pgTaiChinh,baocao:pgBaoCao,
+    taoyc:pgTaoYC,theodoiyc:pgTheDoiYC,bosungtb:pgBoSungTB,
+  };
+  if(pages[page])pages[page]();
+}
+
+/* ═══════════════════════════════
+   TOAST
+═══════════════════════════════ */
+function toast(msg,type='success'){
+  const el=document.createElement('div');
+  el.className='toast-item t-'+type;
+  const icon={success:'✅',error:'❌',info:'ℹ️'}[type];
+  el.innerHTML=icon+' '+msg;
+  document.getElementById('toast').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+
+/* ═══════════════════════════════
+   MODAL
+═══════════════════════════════ */
+function openModal(html){
+  const root=document.getElementById('modal-root');
+  root.innerHTML=`<div class="modal-bg" onclick="closeModalBg(event)">${html}</div>`;
+}
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+function closeModalBg(e){if(e.target===e.currentTarget)closeModal();}
+
+/* ═══════════════════════════════
+   DASHBOARD
+═══════════════════════════════ */
+function pgDashboard(){
+  const total=S.thietbi.reduce((a,b)=>a+b.so_luong,0);
+  const inStock=S.thietbi.reduce((a,b)=>a+b.so_luong_kho,0);
+  const pendingYC=S.yeu_cau.filter(y=>y.trang_thai==='Đang chờ duyệt').length;
+  const hongCount=S.tb_hong.filter(t=>t.trang_thai!=='Hoàn thành').length;
+  const roleLabel={kho:'Nhân viên kho',ql:'Quản lý',dv:'Đơn vị sử dụng'}[currentRole];
+
+  let extra='';
+  if(currentRole==='ql'){
+    const budget=S.ngan_sach;
+    const pct=Math.round(budget.da_su_dung/budget.tong*100);
+    extra=`<div class="card" style="margin-top:1.25rem">
+      <div class="card-title">Ngân sách thiết bị</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px;color:var(--text2)">Đã sử dụng: <b>${fmt(budget.da_su_dung)}</b></span>
+        <span style="font-size:13px;color:var(--text2)">Tổng: <b>${fmt(budget.tong)}</b></span>
+      </div>
+      <div style="height:10px;background:#e2e8f0;border-radius:5px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${pct>80?'var(--red)':'var(--green)'};border-radius:5px;transition:.3s"></div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-top:5px">${pct}% đã sử dụng</div>
+    </div>`;
+  }
+
+  const recentYC=S.yeu_cau.slice(-3).reverse().map(y=>`
+    <tr><td>${y.id}</td><td>${y.tieu_chi}</td><td>${y.don_vi_yc}</td>
+    <td><span class="badge ${y.trang_thai==='Đã duyệt'?'b-green':y.trang_thai==='Từ chối'?'b-red':'b-amber'}">${y.trang_thai}</span></td>
+    <td>${y.ngay_tao}</td></tr>
+  `).join('');
+
+  document.getElementById('main').innerHTML=`
+    <div class="prereq">🔐 Xin chào <b>${currentUser}</b> — Vai trò: <b>${roleLabel}</b>. Tất cả thao tác đều được ghi nhận vào hệ thống.</div>
+    <div class="page-hd"><h2>🏠 Dashboard</h2><p>Tổng quan hoạt động hệ thống</p></div>
+    <div class="stats-row">
+      <div class="stat blue"><div class="stat-num">${S.thietbi.length}</div><div class="stat-lbl">Loại thiết bị</div></div>
+      <div class="stat green"><div class="stat-num">${inStock}</div><div class="stat-lbl">SL trong kho</div></div>
+      <div class="stat amber"><div class="stat-num">${pendingYC}</div><div class="stat-lbl">YC chờ duyệt</div></div>
+      <div class="stat red"><div class="stat-num">${hongCount}</div><div class="stat-lbl">Thiết bị hỏng</div></div>
+    </div>
+    ${extra}
+    <div class="card" style="margin-top:1.25rem">
+      <div class="card-title">Yêu cầu gần đây</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Thiết bị</th><th>Đơn vị</th><th>Trạng thái</th><th>Ngày tạo</th></tr></thead>
+      <tbody>${recentYC||'<tr><td colspan="5" style="text-align:center;color:var(--text3)">Chưa có yêu cầu</td></tr>'}</tbody></table></div>
+    </div>`;
+}
+
+/* ═══════════════════════════════
+   DANH SÁCH THIẾT BỊ
+═══════════════════════════════ */
+function pgThietBi(search=''){
+  const canEdit=currentRole==='kho';
+  let list=S.thietbi.filter(t=>!search||t.ten.toLowerCase().includes(search.toLowerCase())||t.loai.toLowerCase().includes(search.toLowerCase()));
+  const rows=list.map(t=>`<tr>
+    <td><b>${t.id}</b></td><td>${t.ten}</td><td>${t.loai}</td>
+    <td style="text-align:center">${fmtNum(t.so_luong)}</td>
+    <td style="text-align:center"><b style="color:${t.so_luong_kho<2?'var(--red)':'var(--green)'}">${fmtNum(t.so_luong_kho)}</b></td>
+    <td>${t.don_vi}</td><td>${fmt(t.gia)}</td>
+    <td><span class="badge b-green">${t.tinh_trang}</span></td>
+    <td>${canEdit?`<button class="btn btn-ghost btn-sm" onclick="editThietBi('${t.id}')">✏️ Sửa</button>`:'<span style="color:var(--text3)">—</span>'}</td>
+  </tr>`).join('');
+
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>📋 Danh sách thiết bị</h2><p>Quản lý hồ sơ vật tư thiết bị trong kho</p></div>
+    <div style="display:flex;gap:10px;margin-bottom:1rem;align-items:center">
+      <input class="field-input" style="max-width:300px" placeholder="🔍 Tìm kiếm thiết bị..." value="${search}" oninput="pgThietBi(this.value)">
+      ${canEdit?`<button class="btn btn-primary" onclick="addThietBi()">+ Thêm thiết bị</button>`:''}
+    </div>
+    <div class="card">
+      <div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Tên thiết bị</th><th>Loại</th><th>Tổng SL</th><th>SL trong kho</th><th>ĐVT</th><th>Đơn giá</th><th>Tình trạng</th><th></th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="9"><div class="empty"><div class="empty-icon">📭</div><p>Không tìm thấy thiết bị</p></div></td></tr>'}</tbody></table></div>
+    </div>`;
+}
+function addThietBi(){
+  openModal(`<div class="modal"><div class="modal-hd"><h3>➕ Thêm thiết bị mới</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow"><div><label class="field-label">Tên thiết bị *</label><input class="field-input" id="f-ten" placeholder="Tên thiết bị..."></div>
+    <div><label class="field-label">Loại *</label><input class="field-input" id="f-loai" placeholder="Máy tính, máy in..."></div></div>
+    <div class="frow"><div><label class="field-label">Số lượng *</label><input class="field-input" id="f-sl" type="number" min="0" value="0"></div>
+    <div><label class="field-label">Đơn vị tính *</label><input class="field-input" id="f-dvt" placeholder="Cái, bộ..."></div></div>
+    <div class="frow"><div><label class="field-label">Đơn giá (VND)</label><input class="field-input" id="f-gia" type="number" min="0" value="0"></div>
+    <div><label class="field-label">Tình trạng</label><select class="field-input" id="f-tt"><option>Tốt</option><option>Bình thường</option><option>Cần bảo trì</option></select></div></div>
+    <div class="frow full"><label class="field-label">Ghi chú</label><textarea class="field-input" id="f-gc" placeholder="Ghi chú thêm..."></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveThietBi()">💾 Lưu thiết bị</button></div></div>`);
+}
+function saveThietBi(){
+  const ten=v('f-ten'),loai=v('f-loai'),sl=parseInt(v('f-sl'))||0,dvt=v('f-dvt'),gia=parseInt(v('f-gia'))||0,tt=v('f-tt'),gc=v('f-gc');
+  if(!ten||!loai||!dvt){toast('Vui lòng điền đầy đủ thông tin bắt buộc (*)','error');return;}
+  const id=nextId('TB',S.seq_counter.tb<9?'tb':'tb');
+  S.seq_counter.tb++;
+  const nid='TB'+String(S.seq_counter.tb).padStart(3,'0');
+  S.thietbi.push({id:nid,ten,loai,so_luong:sl,so_luong_kho:sl,don_vi:dvt,tinh_trang:tt,gia,ghichu:gc});
+  saveStore();closeModal();toast('Đã thêm thiết bị '+ten);pgThietBi();
+}
+function editThietBi(id){
+  const t=S.thietbi.find(x=>x.id===id);if(!t)return;
+  openModal(`<div class="modal"><div class="modal-hd"><h3>✏️ Sửa thiết bị — ${t.id}</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow"><div><label class="field-label">Tên thiết bị *</label><input class="field-input" id="f-ten" value="${t.ten}"></div>
+    <div><label class="field-label">Loại *</label><input class="field-input" id="f-loai" value="${t.loai}"></div></div>
+    <div class="frow"><div><label class="field-label">Tổng SL</label><input class="field-input" id="f-sl" type="number" value="${t.so_luong}"></div>
+    <div><label class="field-label">SL trong kho</label><input class="field-input" id="f-slk" type="number" value="${t.so_luong_kho}"></div></div>
+    <div class="frow"><div><label class="field-label">Đơn giá</label><input class="field-input" id="f-gia" type="number" value="${t.gia}"></div>
+    <div><label class="field-label">Tình trạng</label><select class="field-input" id="f-tt"><option ${t.tinh_trang==='Tốt'?'selected':''}>Tốt</option><option ${t.tinh_trang==='Bình thường'?'selected':''}>Bình thường</option><option ${t.tinh_trang==='Cần bảo trì'?'selected':''}>Cần bảo trì</option></select></div></div>
+    <div class="frow full"><label class="field-label">Ghi chú</label><textarea class="field-input" id="f-gc">${t.ghichu}</textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveEditTB('${id}')">💾 Lưu thay đổi</button></div></div>`);
+}
+function saveEditTB(id){
+  const t=S.thietbi.find(x=>x.id===id);if(!t)return;
+  t.ten=v('f-ten');t.loai=v('f-loai');t.so_luong=parseInt(v('f-sl'))||0;t.so_luong_kho=parseInt(v('f-slk'))||0;t.gia=parseInt(v('f-gia'))||0;t.tinh_trang=v('f-tt');t.ghichu=v('f-gc');
+  if(!t.ten||!t.loai){toast('Tên và loại không được để trống','error');return;}
+  saveStore();closeModal();toast('Đã cập nhật thiết bị '+t.ten);pgThietBi();
+}
+
+/* ═══════════════════════════════
+   NHẬP KHO
+═══════════════════════════════ */
+function pgNhapKho(){
+  const rows=S.nhap_kho.slice().reverse().map(n=>`<tr>
+    <td><b>${n.id}</b></td><td>${n.ten_tb}</td><td>${fmtNum(n.so_luong)}</td><td>${n.don_vi}</td>
+    <td>${n.nha_cung_cap||'—'}</td><td>${n.nguoi_nhap}</td><td>${n.ngay_nhap}</td>
+    <td>${fmt(n.don_gia*n.so_luong)}</td><td><span class="badge b-green">Đã nhập</span></td>
+  </tr>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>📥 Nhập kho</h2><p>Ghi nhận vật tư thiết bị nhận vào kho</p></div>
+    <div style="margin-bottom:1rem"><button class="btn btn-primary" onclick="formNhapKho()">+ Tạo phiếu nhập kho</button></div>
+    <div class="card">
+      <div class="card-title">Lịch sử nhập kho</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Mã phiếu</th><th>Thiết bị</th><th>SL</th><th>ĐVT</th><th>Nhà cung cấp</th><th>Người nhập</th><th>Ngày nhập</th><th>Thành tiền</th><th>TT</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="9"><div class="empty"><div class="empty-icon">📭</div><p>Chưa có phiếu nhập kho</p></div></td></tr>'}</tbody></table></div>
+    </div>`;
+}
+function formNhapKho(){
+  const tbOpts=S.thietbi.map(t=>`<option value="${t.id}">${t.id} — ${t.ten}</option>`).join('');
+  const nccOpts='<option value="">-- Chọn nhà cung cấp --</option>'+S.nha_cung_cap.map(n=>`<option value="${n.ten}">${n.ten}</option>`).join('');
+  openModal(`<div class="modal"><div class="modal-hd"><h3>📥 Tạo phiếu nhập kho</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow full"><label class="field-label">Thiết bị nhập *</label><select class="field-input" id="f-tbid">${tbOpts}</select></div>
+    <div class="frow"><div><label class="field-label">Số lượng nhập *</label><input class="field-input" id="f-sl" type="number" min="1" value="1"></div>
+    <div><label class="field-label">Đơn giá (VND)</label><input class="field-input" id="f-dg" type="number" min="0" value="0"></div></div>
+    <div class="frow"><div><label class="field-label">Nhà cung cấp</label><select class="field-input" id="f-ncc">${nccOpts}</select></div>
+    <div><label class="field-label">Ngày nhập *</label><input class="field-input" id="f-ngay" type="date" value="${today()}"></div></div>
+    <div class="frow full"><label class="field-label">Ghi chú</label><textarea class="field-input" id="f-gc" placeholder="Ghi chú phiếu nhập..."></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-success" onclick="saveNhapKho()">✅ Xác nhận nhập kho</button></div></div>`);
+}
+function saveNhapKho(){
+  const tbid=v('f-tbid'),sl=parseInt(v('f-sl'))||0,dg=parseInt(v('f-dg'))||0,ncc=v('f-ncc'),ngay=v('f-ngay'),gc=v('f-gc');
+  if(!tbid||sl<1||!ngay){toast('Vui lòng điền đầy đủ thông tin','error');return;}
+  const tb=S.thietbi.find(t=>t.id===tbid);if(!tb){toast('Thiết bị không tồn tại','error');return;}
+  S.seq_counter.nhap=(S.seq_counter.nhap||0)+1;
+  const id='NK'+String(S.seq_counter.nhap).padStart(3,'0');
+  S.nhap_kho.push({id,tb_id:tbid,ten_tb:tb.ten,so_luong:sl,don_vi:tb.don_vi,don_gia:dg,nha_cung_cap:ncc,nguoi_nhap:currentUser,ngay_nhap:ngay,ghichu:gc});
+  tb.so_luong+=sl;tb.so_luong_kho+=sl;
+  saveStore();closeModal();toast('Đã nhập kho '+sl+' '+tb.don_vi+' '+tb.ten);pgNhapKho();
+}
+
+/* ═══════════════════════════════
+   XUẤT KHO (luồng đầy đủ)
+═══════════════════════════════ */
+function pgXuatKho(){
+  const rows=S.xuat_kho.slice().reverse().map(x=>`<tr>
+    <td><b>${x.id}</b></td><td>${x.ten_tb}</td><td>${fmtNum(x.so_luong)}</td>
+    <td>${x.don_vi_nhan}</td><td>${x.yc_id||'—'}</td><td>${x.nguoi_xuat}</td><td>${x.ngay_xuat}</td>
+    <td><span class="badge b-green">Đã xuất</span></td>
+  </tr>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>📤 Xuất kho</h2><p>Thực hiện xuất kho thiết bị theo yêu cầu đã được duyệt</p></div>
+    <div style="margin-bottom:1rem"><button class="btn btn-primary" onclick="formXuatKho()">+ Tạo phiếu xuất kho</button></div>
+    <div class="card">
+      <div class="card-title">Lịch sử xuất kho</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Mã phiếu</th><th>Thiết bị</th><th>SL</th><th>Đơn vị nhận</th><th>Mã YC</th><th>Người xuất</th><th>Ngày xuất</th><th>TT</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div><p>Chưa có phiếu xuất kho</p></div></td></tr>'}</tbody></table></div>
+    </div>`;
+}
+function formXuatKho(){
+  const approved=S.yeu_cau.filter(y=>y.trang_thai==='Đã duyệt');
+  const ycOpts='<option value="">-- Chọn yêu cầu đã duyệt --</option>'+approved.map(y=>`<option value="${y.id}" data-tb="${y.tb_id}" data-sl="${y.so_luong}" data-dv="${y.don_vi_yc}">${y.id} — ${y.tieu_chi} (SL: ${y.so_luong}) — ${y.don_vi_yc}</option>`).join('');
+  openModal(`<div class="modal"><div class="modal-hd"><h3>📤 Tạo phiếu xuất kho</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r);padding:10px 14px;font-size:13px;color:#92400e;margin-bottom:1rem">⚠️ Điều kiện: Yêu cầu phải <b>đã được duyệt</b> và kho phải đủ số lượng.</div>
+    <div class="frow full"><label class="field-label">Yêu cầu đã duyệt *</label><select class="field-input" id="f-ycid" onchange="fillXuatFromYC()">${ycOpts}</select></div>
+    <div class="frow"><div><label class="field-label">Thiết bị</label><input class="field-input" id="f-tb-name" readonly placeholder="Tự động điền..."></div>
+    <div><label class="field-label">Đơn vị nhận</label><input class="field-input" id="f-dvnhan" placeholder="Đơn vị nhận hàng..."></div></div>
+    <div class="frow"><div><label class="field-label">Số lượng xuất *</label><input class="field-input" id="f-sl" type="number" min="1" value="1"></div>
+    <div><label class="field-label">Ngày xuất *</label><input class="field-input" id="f-ngay" type="date" value="${today()}"></div></div>
+    <div class="frow full"><label class="field-label">Ghi chú</label><textarea class="field-input" id="f-gc" placeholder="Ghi chú phiếu xuất..."></textarea></div>
+    <div id="xk-warn" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:var(--r);padding:8px 12px;font-size:12px;color:var(--red);margin-top:8px"></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveXuatKho()">📤 Xác nhận xuất kho</button></div></div>`);
+}
+function fillXuatFromYC(){
+  const sel=document.getElementById('f-ycid');
+  const opt=sel.options[sel.selectedIndex];
+  const tbId=opt.getAttribute('data-tb');
+  const sl=opt.getAttribute('data-sl');
+  const dv=opt.getAttribute('data-dv');
+  const tb=S.thietbi.find(t=>t.id===tbId);
+  if(tb){document.getElementById('f-tb-name').value=tb.ten;document.getElementById('f-sl').value=sl;document.getElementById('f-dvnhan').value=dv||'';}
+}
+function saveXuatKho(){
+  const ycid=v('f-ycid'),sl=parseInt(v('f-sl'))||0,dvnhan=v('f-dvnhan'),ngay=v('f-ngay'),gc=v('f-gc');
+  const warn=document.getElementById('xk-warn');
+  warn.style.display='none';
+  if(!ycid){toast('Vui lòng chọn yêu cầu đã duyệt','error');return;}
+  const yc=S.yeu_cau.find(y=>y.id===ycid);
+  if(!yc||yc.trang_thai!=='Đã duyệt'){warn.style.display='block';warn.textContent='❌ Yêu cầu chưa được duyệt. Không thể xuất kho.';return;}
+  const tb=S.thietbi.find(t=>t.id===yc.tb_id);
+  if(!tb){toast('Thiết bị không tồn tại','error');return;}
+  if(tb.so_luong_kho<sl){warn.style.display='block';warn.textContent=`❌ Không đủ số lượng trong kho. Hiện có: ${tb.so_luong_kho}, yêu cầu: ${sl}`;return;}
+  S.seq_counter.xuat=(S.seq_counter.xuat||0)+1;
+  const id='XK'+String(S.seq_counter.xuat).padStart(3,'0');
+  S.xuat_kho.push({id,tb_id:tb.id,ten_tb:tb.ten,so_luong:sl,don_vi:tb.don_vi,don_vi_nhan:dvnhan||yc.don_vi_yc,yc_id:ycid,nguoi_xuat:currentUser,ngay_xuat:ngay,ghichu:gc});
+  tb.so_luong_kho-=sl;
+  yc.trang_thai='Đã xuất kho';
+  saveStore();closeModal();toast('Xuất kho thành công '+sl+' '+tb.don_vi+' '+tb.ten);pgXuatKho();
+}
+
+/* ═══════════════════════════════
+   KIỂM KÊ
+═══════════════════════════════ */
+function pgKiemKe(){
+  const rows=S.kiem_ke.slice().reverse().map(k=>`<tr>
+    <td><b>${k.id}</b></td><td>${k.ngay}</td><td>${k.nguoi_kiem}</td>
+    <td>${k.tong_loai} loại</td>
+    <td><span class="badge ${k.co_chenh_lech?'b-red':'b-green'}">${k.co_chenh_lech?'Có chênh lệch':'Không chênh lệch'}</span></td>
+    <td><button class="btn btn-ghost btn-sm" onclick="xemKiemKe('${k.id}')">👁️ Xem</button></td>
+  </tr>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>🔍 Kiểm kê thiết bị</h2><p>Đối chiếu số lượng thực tế với số liệu hệ thống</p></div>
+    <div style="margin-bottom:1rem"><button class="btn btn-primary" onclick="formKiemKe()">+ Bắt đầu kiểm kê mới</button></div>
+    <div class="card">
+      <div class="card-title">Lịch sử kiểm kê</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Mã KK</th><th>Ngày KK</th><th>Người KK</th><th>Số lượng TB</th><th>Kết quả</th><th></th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔍</div><p>Chưa có phiếu kiểm kê</p></div></td></tr>'}</tbody></table></div>
+    </div>`;
+}
+function formKiemKe(){
+  const rows=S.thietbi.map(t=>`
+    <tr>
+      <td>${t.id}</td><td>${t.ten}</td><td>${t.loai}</td>
+      <td style="text-align:center;color:var(--blue);font-weight:700">${t.so_luong_kho}</td>
+      <td><input type="number" class="field-input" style="width:80px;padding:5px 8px" id="kk-${t.id}" min="0" value="${t.so_luong_kho}"></td>
+    </tr>`).join('');
+  openModal(`<div class="modal" style="max-width:680px"><div class="modal-hd"><h3>🔍 Phiếu kiểm kê thiết bị</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--blue2);margin-bottom:1rem">ℹ️ Nhập số lượng thực tế đếm được vào cột "SL thực tế". Hệ thống sẽ tự so sánh và lập biên bản chênh lệch nếu có.</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Mã TB</th><th>Tên thiết bị</th><th>Loại</th><th>SL hệ thống</th><th>SL thực tế</th></tr></thead><tbody>${rows}</tbody></table></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveKiemKe()">✅ Hoàn tất kiểm kê</button></div></div>`);
+}
+function saveKiemKe(){
+  const chenh_lech=[];
+  S.thietbi.forEach(t=>{
+    const thucte=parseInt(document.getElementById('kk-'+t.id)?.value)||0;
+    if(thucte!==t.so_luong_kho)chenh_lech.push({tb_id:t.id,ten:t.ten,he_thong:t.so_luong_kho,thuc_te:thucte,chenh_lech:thucte-t.so_luong_kho});
+  });
+  S.seq_counter.kk=(S.seq_counter.kk||0)+1;
+  const id='KK'+String(S.seq_counter.kk).padStart(3,'0');
+  S.kiem_ke.push({id,ngay:today(),nguoi_kiem:currentUser,tong_loai:S.thietbi.length,co_chenh_lech:chenh_lech.length>0,chenh_lech,chi_tiet:S.thietbi.map(t=>({tb_id:t.id,ten:t.ten,he_thong:t.so_luong_kho,thuc_te:parseInt(document.getElementById('kk-'+t.id)?.value)||0}))});
+  saveStore();closeModal();
+  if(chenh_lech.length>0){
+    toast(`Kiểm kê hoàn tất — Phát hiện ${chenh_lech.length} chênh lệch!`,'info');
+    xemKiemKe(id);
+  } else {
+    toast('Kiểm kê hoàn tất — Không có chênh lệch ✅');pgKiemKe();
+  }
+}
+function xemKiemKe(id){
+  const k=S.kiem_ke.find(x=>x.id===id);if(!k)return;
+  nav('kiemke');
+  const clRows=k.chenh_lech.length>0?k.chenh_lech.map(c=>`<tr>
+    <td>${c.tb_id}</td><td>${c.ten}</td>
+    <td style="text-align:center">${c.he_thong}</td>
+    <td style="text-align:center">${c.thuc_te}</td>
+    <td style="text-align:center;font-weight:700;color:${c.chenh_lech>0?'var(--green)':'var(--red)'}">${c.chenh_lech>0?'+':''}${c.chenh_lech}</td>
+  </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--green)">✅ Không có chênh lệch</td></tr>';
+  openModal(`<div class="modal" style="max-width:600px"><div class="modal-hd"><h3>📋 Biên bản kiểm kê — ${k.id}</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="info-grid" style="margin-bottom:1rem">
+      <div class="info-field"><label>Ngày kiểm kê</label><p>${k.ngay}</p></div>
+      <div class="info-field"><label>Người kiểm kê</label><p>${k.nguoi_kiem}</p></div>
+      <div class="info-field"><label>Số loại thiết bị</label><p>${k.tong_loai}</p></div>
+      <div class="info-field"><label>Kết quả</label><p><span class="badge ${k.co_chenh_lech?'b-red':'b-green'}">${k.co_chenh_lech?'Có '+k.chenh_lech.length+' chênh lệch':'Không chênh lệch'}</span></p></div>
+    </div>
+    <div class="card-title">Danh sách chênh lệch</div>
+    <div class="tbl-wrap"><table><thead><tr><th>Mã TB</th><th>Tên thiết bị</th><th>SL hệ thống</th><th>SL thực tế</th><th>Chênh lệch</th></tr></thead><tbody>${clRows}</tbody></table></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Đóng</button></div></div>`);
+}
+
+/* ═══════════════════════════════
+   TẠO YÊU CẦU (đơn vị sử dụng)
+═══════════════════════════════ */
+function pgTaoYC(){
+  const tbOpts=S.thietbi.map(t=>`<option value="${t.id}" data-ten="${t.ten}">${t.id} — ${t.ten} (kho: ${t.so_luong_kho} ${t.don_vi})</option>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>📝 Tạo yêu cầu sử dụng thiết bị</h2><p>Gửi yêu cầu mượn/sử dụng thiết bị đến quản lý phê duyệt</p></div>
+    <div class="prereq">🔐 Yêu cầu sẽ được gửi dưới tên: <b>${currentUser}</b> — Đơn vị sử dụng</div>
+    <div class="card" style="max-width:560px">
+      <div class="card-title">Thông tin yêu cầu</div>
+      <div class="fgroup"><label class="field-label">Thiết bị cần mượn *</label><select class="field-input" id="yc-tb">${tbOpts}</select></div>
+      <div class="frow"><div><label class="field-label">Số lượng yêu cầu *</label><input class="field-input" id="yc-sl" type="number" min="1" value="1"></div>
+      <div><label class="field-label">Đơn vị sử dụng *</label><input class="field-input" id="yc-dv" placeholder="Tên phòng ban..."></div></div>
+      <div class="fgroup"><label class="field-label">Mục đích sử dụng *</label><textarea class="field-input" id="yc-gc" placeholder="Mô tả mục đích sử dụng thiết bị..."></textarea></div>
+      <div style="display:flex;gap:8px;margin-top:.5rem">
+        <button class="btn btn-primary" onclick="saveYC()">📤 Gửi yêu cầu</button>
+        <button class="btn btn-ghost" onclick="nav('theodoiyc')">👁️ Xem yêu cầu của tôi</button>
+      </div>
+    </div>`;
+}
+function saveYC(){
+  const tbid=v('yc-tb'),sl=parseInt(v('yc-sl'))||0,dv=v('yc-dv'),gc=v('yc-gc');
+  if(!tbid||sl<1||!dv||!gc){toast('Vui lòng điền đầy đủ thông tin (*)','error');return;}
+  const tb=S.thietbi.find(t=>t.id===tbid);if(!tb)return;
+  S.seq_counter.yc=(S.seq_counter.yc||2)+1;
+  const id='YC'+String(S.seq_counter.yc).padStart(3,'0');
+  S.yeu_cau.push({id,tieu_chi:tb.ten,tb_id:tbid,so_luong:sl,don_vi_yc:dv,nguoi_tao:currentUser,ngay_tao:today(),trang_thai:'Đang chờ duyệt',ghichu:gc});
+  saveStore();toast('Đã gửi yêu cầu '+id+' — Đang chờ quản lý phê duyệt');nav('theodoiyc');
+}
+
+/* ═══════════════════════════════
+   THEO DÕI YÊU CẦU
+═══════════════════════════════ */
+function pgTheDoiYC(){
+  const myYC=currentRole==='dv'?S.yeu_cau.filter(y=>y.nguoi_tao===currentUser):S.yeu_cau;
+  const rows=myYC.slice().reverse().map(y=>`<tr>
+    <td><b>${y.id}</b></td><td>${y.tieu_chi}</td><td style="text-align:center">${y.so_luong}</td>
+    <td>${y.don_vi_yc}</td><td>${y.ngay_tao}</td>
+    <td><span class="badge ${y.trang_thai==='Đã duyệt'||y.trang_thai==='Đã xuất kho'?'b-green':y.trang_thai==='Từ chối'?'b-red':y.trang_thai==='Đang chờ duyệt'?'b-amber':'b-teal'}">${y.trang_thai}</span></td>
+    <td style="max-width:200px;font-size:12px;color:var(--text2)">${y.ghichu}</td>
+  </tr>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>👁️ Theo dõi yêu cầu sử dụng</h2><p>${currentRole==='dv'?'Yêu cầu của bạn':'Tất cả yêu cầu trong hệ thống'}</p></div>
+    <div class="card">
+      <div class="tbl-wrap"><table><thead><tr><th>Mã YC</th><th>Thiết bị</th><th>SL</th><th>Đơn vị</th><th>Ngày tạo</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="7"><div class="empty"><div class="empty-icon">📭</div><p>Chưa có yêu cầu nào</p></div></td></tr>'}</tbody></table></div>
+    </div>`;
+}
+
+/* ═══════════════════════════════
+   DUYỆT YÊU CẦU (quản lý)
+═══════════════════════════════ */
+function pgDuyetYC(){
+  const pending=S.yeu_cau.filter(y=>y.trang_thai==='Đang chờ duyệt');
+  const all=S.yeu_cau.slice().reverse();
+  const pendingRows=pending.map(y=>`<tr>
+    <td><b>${y.id}</b></td><td>${y.tieu_chi}</td><td style="text-align:center">${y.so_luong}</td>
+    <td>${y.don_vi_yc}</td><td>${y.nguoi_tao}</td><td>${y.ngay_tao}</td>
+    <td style="max-width:180px;font-size:12px">${y.ghichu}</td>
+    <td>
+      <div style="display:flex;gap:5px">
+        <button class="btn btn-success btn-sm" onclick="duyetYC('${y.id}','duyet')">✅ Duyệt</button>
+        <button class="btn btn-danger btn-sm" onclick="duyetYC('${y.id}','tuchoi')">❌ Từ chối</button>
+      </div>
+    </td>
+  </tr>`).join('');
+  const allRows=all.map(y=>`<tr>
+    <td><b>${y.id}</b></td><td>${y.tieu_chi}</td><td>${y.don_vi_yc}</td><td>${y.nguoi_tao}</td><td>${y.ngay_tao}</td>
+    <td><span class="badge ${y.trang_thai==='Đã duyệt'||y.trang_thai==='Đã xuất kho'?'b-green':y.trang_thai==='Từ chối'?'b-red':y.trang_thai==='Đang chờ duyệt'?'b-amber':'b-teal'}">${y.trang_thai}</span></td>
+  </tr>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>✅ Duyệt yêu cầu sử dụng thiết bị</h2><p>Xem xét và phê duyệt hoặc từ chối yêu cầu từ các đơn vị</p></div>
+    <div class="ptabs"><div class="ptab active" onclick="switchTab(this,'pt-cho')">Chờ duyệt <span class="badge b-amber" style="margin-left:4px">${pending.length}</span></div><div class="ptab" onclick="switchTab(this,'pt-all')">Tất cả yêu cầu</div></div>
+    <div id="pt-cho" class="ptab-content active">
+      ${pending.length===0?`<div class="empty"><div class="empty-icon">🎉</div><p>Không có yêu cầu nào đang chờ duyệt</p></div>`:`
+      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Mã YC</th><th>Thiết bị</th><th>SL</th><th>Đơn vị</th><th>Người tạo</th><th>Ngày tạo</th><th>Ghi chú</th><th>Hành động</th></tr></thead>
+      <tbody>${pendingRows}</tbody></table></div></div>`}
+    </div>
+    <div id="pt-all" class="ptab-content">
+      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Mã YC</th><th>Thiết bị</th><th>Đơn vị</th><th>Người tạo</th><th>Ngày tạo</th><th>Trạng thái</th></tr></thead>
+      <tbody>${allRows||'<tr><td colspan="6" style="text-align:center;color:var(--text3)">Không có yêu cầu</td></tr>'}</tbody></table></div></div>
+    </div>`;
+}
+function duyetYC(id,action){
+  const yc=S.yeu_cau.find(y=>y.id===id);if(!yc)return;
+  if(action==='duyet'){
+    const tb=S.thietbi.find(t=>t.id===yc.tb_id);
+    if(tb&&tb.so_luong_kho<yc.so_luong){toast('Không đủ số lượng trong kho để duyệt yêu cầu này','error');return;}
+    yc.trang_thai='Đã duyệt';toast('Đã phê duyệt yêu cầu '+id+' ✅');
+  } else {
+    yc.trang_thai='Từ chối';toast('Đã từ chối yêu cầu '+id,'info');
+  }
+  saveStore();pgDuyetYC();
+}
+
+/* ═══════════════════════════════
+   BẢO TRÌ
+═══════════════════════════════ */
+function pgBaoTri(){
+  const rows=S.bao_tri.slice().reverse().map(b=>`<tr>
+    <td><b>${b.id}</b></td><td>${b.ten_tb}</td><td>${b.loai}</td>
+    <td>${b.ngay_lap}</td><td>${b.ngay_du_kien}</td>
+    <td>${b.ky_thuat_vien||'—'}</td><td>${fmt(b.chi_phi||0)}</td>
+    <td><span class="badge ${b.trang_thai==='Hoàn thành'?'b-green':b.trang_thai==='Đang thực hiện'?'b-blue':'b-amber'}">${b.trang_thai}</span></td>
+    <td><div style="display:flex;gap:4px">
+      <button class="btn btn-ghost btn-sm" onclick="capNhatBaoTri('${b.id}')">⚙️ Cập nhật</button>
+      ${b.trang_thai!=='Hoàn thành'?`<button class="btn btn-success btn-sm" onclick="hoanThanhBT('${b.id}')">✅</button>`:''}
+    </div></td>
+  </tr>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>🔧 Quản lý bảo trì</h2><p>Lập lịch và theo dõi bảo trì thiết bị</p></div>
+    <div style="margin-bottom:1rem"><button class="btn btn-primary" onclick="formBaoTri()">+ Lập yêu cầu bảo trì</button></div>
+    <div class="card">
+      <div class="tbl-wrap"><table><thead><tr><th>Mã BT</th><th>Thiết bị</th><th>Loại BT</th><th>Ngày lập</th><th>Dự kiến</th><th>Kỹ thuật viên</th><th>Chi phí</th><th>Trạng thái</th><th></th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="9"><div class="empty"><div class="empty-icon">🔧</div><p>Chưa có lịch bảo trì</p></div></td></tr>'}</tbody></table></div>
+    </div>`;
+}
+function formBaoTri(){
+  const tbOpts=S.thietbi.map(t=>`<option value="${t.id}" data-ten="${t.ten}">${t.id} — ${t.ten}</option>`).join('');
+  openModal(`<div class="modal"><div class="modal-hd"><h3>🔧 Lập yêu cầu bảo trì</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow full"><label class="field-label">Thiết bị *</label><select class="field-input" id="f-tbid">${tbOpts}</select></div>
+    <div class="frow"><div><label class="field-label">Loại bảo trì *</label><select class="field-input" id="f-loai"><option>Bảo dưỡng định kỳ</option><option>Sửa chữa</option><option>Kiểm tra</option><option>Thay thế linh kiện</option></select></div>
+    <div><label class="field-label">Ngày dự kiến</label><input class="field-input" id="f-ngay" type="date" value="${today()}"></div></div>
+    <div class="frow"><div><label class="field-label">Kỹ thuật viên</label><input class="field-input" id="f-ktv" placeholder="Tên kỹ thuật viên..."></div>
+    <div><label class="field-label">Chi phí dự kiến</label><input class="field-input" id="f-cp" type="number" min="0" value="0"></div></div>
+    <div class="frow full"><label class="field-label">Ghi chú</label><textarea class="field-input" id="f-gc" placeholder="Mô tả công việc bảo trì..."></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveBaoTri()">💾 Lưu lịch bảo trì</button></div></div>`);
+}
+function saveBaoTri(){
+  const tbid=v('f-tbid'),loai=v('f-loai'),ngay=v('f-ngay'),ktv=v('f-ktv'),cp=parseInt(v('f-cp'))||0,gc=v('f-gc');
+  const tb=S.thietbi.find(t=>t.id===tbid);if(!tb)return;
+  S.seq_counter.bt=(S.seq_counter.bt||1)+1;
+  const id='BT'+String(S.seq_counter.bt).padStart(3,'0');
+  S.bao_tri.push({id,tb_id:tbid,ten_tb:tb.ten,loai,ngay_lap:today(),ngay_du_kien:ngay,ky_thuat_vien:ktv,chi_phi:cp,trang_thai:'Đang thực hiện',ghichu:gc});
+  saveStore();closeModal();toast('Đã lập lịch bảo trì '+id+' cho '+tb.ten);pgBaoTri();
+}
+function capNhatBaoTri(id){
+  const b=S.bao_tri.find(x=>x.id===id);if(!b)return;
+  openModal(`<div class="modal"><div class="modal-hd"><h3>⚙️ Cập nhật bảo trì — ${b.id}</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <p style="margin-bottom:1rem;color:var(--text2)">Thiết bị: <b>${b.ten_tb}</b></p>
+    <div class="frow"><div><label class="field-label">Trạng thái</label><select class="field-input" id="f-tt"><option ${b.trang_thai==='Đang thực hiện'?'selected':''}>Đang thực hiện</option><option ${b.trang_thai==='Hoàn thành'?'selected':''}>Hoàn thành</option><option ${b.trang_thai==='Tạm dừng'?'selected':''}>Tạm dừng</option></select></div>
+    <div><label class="field-label">Chi phí thực tế</label><input class="field-input" id="f-cp" type="number" value="${b.chi_phi}"></div></div>
+    <div class="frow full"><label class="field-label">Ghi chú cập nhật</label><textarea class="field-input" id="f-gc">${b.ghichu}</textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveUpdateBT('${id}')">💾 Lưu</button></div></div>`);
+}
+function saveUpdateBT(id){
+  const b=S.bao_tri.find(x=>x.id===id);if(!b)return;
+  b.trang_thai=v('f-tt');b.chi_phi=parseInt(v('f-cp'))||0;b.ghichu=v('f-gc');
+  saveStore();closeModal();toast('Đã cập nhật trạng thái bảo trì');pgBaoTri();
+}
+function hoanThanhBT(id){
+  const b=S.bao_tri.find(x=>x.id===id);if(!b)return;
+  b.trang_thai='Hoàn thành';saveStore();toast('Bảo trì '+id+' đã hoàn thành ✅');pgBaoTri();
+}
+
+/* ═══════════════════════════════
+   THIẾT BỊ HỎNG
+═══════════════════════════════ */
+function pgTBHong(){
+  const rows=S.tb_hong.slice().reverse().map(t=>`<tr>
+    <td><b>${t.id}</b></td><td>${t.ten_tb}</td><td style="font-size:12px">${t.mo_ta_loi}</td>
+    <td>${t.nguoi_ghi_nhan}</td><td>${t.ngay_ghi}</td>
+    <td><span class="badge ${t.trang_thai==='Hoàn thành'?'b-green':t.trang_thai==='Đang sửa chữa'?'b-blue':t.trang_thai==='Chờ đánh giá'?'b-amber':'b-purple'}">${t.trang_thai}</span></td>
+    <td><div style="display:flex;gap:4px">
+      ${t.trang_thai==='Chờ đánh giá'?`<button class="btn btn-warning btn-sm" onclick="danhGiaTBH('${t.id}')">📋 Đánh giá</button>`:''}
+      ${t.trang_thai==='Đã đánh giá'?`<button class="btn btn-primary btn-sm" onclick="lepLichSC('${t.id}')">📅 Lên lịch</button>`:''}
+      ${t.trang_thai==='Đang sửa chữa'?`<button class="btn btn-success btn-sm" onclick="hoanThanhSC('${t.id}')">✅ Xong</button>`:''}
+    </div></td>
+  </tr>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>⚠️ Quản lý thiết bị hỏng</h2><p>Ghi nhận, đánh giá và lập lịch sửa chữa thiết bị hỏng</p></div>
+    <div style="margin-bottom:1rem"><button class="btn btn-danger" onclick="formGhiNhanTBH()">⚠️ Ghi nhận thiết bị hỏng</button></div>
+    <div class="card">
+      <div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Thiết bị</th><th>Mô tả lỗi</th><th>Người ghi nhận</th><th>Ngày ghi</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="7"><div class="empty"><div class="empty-icon">✅</div><p>Không có thiết bị hỏng</p></div></td></tr>'}</tbody></table></div>
+    </div>`;
+}
+function formGhiNhanTBH(){
+  const tbOpts=S.thietbi.map(t=>`<option value="${t.id}" data-ten="${t.ten}">${t.id} — ${t.ten}</option>`).join('');
+  openModal(`<div class="modal"><div class="modal-hd"><h3>⚠️ Ghi nhận thiết bị hỏng</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow full"><label class="field-label">Thiết bị hỏng *</label><select class="field-input" id="f-tbid">${tbOpts}</select></div>
+    <div class="frow full"><label class="field-label">Mô tả lỗi / Hiện tượng hỏng *</label><textarea class="field-input" id="f-mota" placeholder="Mô tả chi tiết lỗi hoặc hiện tượng hỏng..."></textarea></div>
+    <div class="frow full"><label class="field-label">Ghi chú</label><input class="field-input" id="f-gc" placeholder="Ghi chú thêm..."></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-danger" onclick="saveGhiNhanTBH()">⚠️ Xác nhận ghi nhận</button></div></div>`);
+}
+function saveGhiNhanTBH(){
+  const tbid=v('f-tbid'),mota=v('f-mota'),gc=v('f-gc');
+  if(!tbid||!mota){toast('Vui lòng điền đầy đủ thông tin','error');return;}
+  const tb=S.thietbi.find(t=>t.id===tbid);if(!tb)return;
+  S.seq_counter.th=(S.seq_counter.th||1)+1;
+  const id='TH'+String(S.seq_counter.th).padStart(3,'0');
+  S.tb_hong.push({id,tb_id:tbid,ten_tb:tb.ten,mo_ta_loi:mota,nguoi_ghi_nhan:currentUser,ngay_ghi:today(),tinh_trang_danh_gia:'',trang_thai:'Chờ đánh giá',lich_sua_chua:'',ghichu:gc});
+  tb.tinh_trang='Cần bảo trì';
+  saveStore();closeModal();toast('Đã ghi nhận thiết bị hỏng '+id);pgTBHong();
+}
+function danhGiaTBH(id){
+  const t=S.tb_hong.find(x=>x.id===id);if(!t)return;
+  openModal(`<div class="modal"><div class="modal-hd"><h3>📋 Đánh giá tình trạng — ${t.id}</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <p style="margin-bottom:1rem"><b>Thiết bị:</b> ${t.ten_tb}<br><b>Lỗi:</b> ${t.mo_ta_loi}</p>
+    <div class="fgroup"><label class="field-label">Kết quả đánh giá *</label><select class="field-input" id="f-dg"><option>Hỏng nhẹ — Có thể sửa tại chỗ</option><option>Hỏng nặng — Cần gửi hãng</option><option>Hỏng hoàn toàn — Cần thanh lý</option></select></div>
+    <div class="fgroup"><label class="field-label">Ghi chú kỹ thuật</label><textarea class="field-input" id="f-gc" placeholder="Ghi chú từ người đánh giá..."></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-warning" onclick="saveDanhGiaTBH('${id}')">📋 Lưu đánh giá</button></div></div>`);
+}
+function saveDanhGiaTBH(id){
+  const t=S.tb_hong.find(x=>x.id===id);if(!t)return;
+  t.tinh_trang_danh_gia=v('f-dg');t.ghichu+=' | Đánh giá: '+v('f-gc');t.trang_thai='Đã đánh giá';
+  saveStore();closeModal();toast('Đã lưu đánh giá tình trạng thiết bị');pgTBHong();
+}
+function lepLichSC(id){
+  const t=S.tb_hong.find(x=>x.id===id);if(!t)return;
+  openModal(`<div class="modal"><div class="modal-hd"><h3>📅 Lên lịch sửa chữa — ${t.id}</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow"><div><label class="field-label">Ngày sửa chữa dự kiến *</label><input class="field-input" id="f-ngay" type="date" value="${today()}"></div>
+    <div><label class="field-label">Đơn vị sửa chữa</label><input class="field-input" id="f-dvsc" placeholder="Tên kỹ thuật viên / hãng..."></div></div>
+    <div class="frow full"><label class="field-label">Ghi chú</label><textarea class="field-input" id="f-gc"></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveLichSC('${id}')">📅 Xác nhận lên lịch</button></div></div>`);
+}
+function saveLichSC(id){
+  const t=S.tb_hong.find(x=>x.id===id);if(!t)return;
+  t.lich_sua_chua=v('f-ngay');t.ghichu+=' | Đơn vị SC: '+v('f-dvsc')+' - Ngày: '+v('f-ngay');t.trang_thai='Đang sửa chữa';
+  saveStore();closeModal();toast('Đã lên lịch sửa chữa cho '+t.ten_tb);pgTBHong();
+}
+function hoanThanhSC(id){
+  const t=S.tb_hong.find(x=>x.id===id);if(!t)return;
+  t.trang_thai='Hoàn thành';
+  const tb=S.thietbi.find(x=>x.id===t.tb_id);if(tb)tb.tinh_trang='Tốt';
+  saveStore();toast('Thiết bị '+t.ten_tb+' đã sửa xong ✅');pgTBHong();
+}
+
+/* ═══════════════════════════════
+   NHÀ CUNG CẤP
+═══════════════════════════════ */
+function pgNCC(){
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>🏭 Quản lý nhà cung cấp</h2></div>
+    <div class="ptabs">
+      <div class="ptab active" onclick="switchTab(this,'ncc-ds')">Danh sách NCC</div>
+      <div class="ptab" onclick="switchTab(this,'ncc-hd')">Hợp đồng</div>
+      <div class="ptab" onclick="switchTab(this,'ncc-tt')">Lịch sử thanh toán</div>
+    </div>
+    <div id="ncc-ds" class="ptab-content active">${renderNCC()}</div>
+    <div id="ncc-hd" class="ptab-content">${renderHopDong()}</div>
+    <div id="ncc-tt" class="ptab-content">${renderThanhToan()}</div>`;
+}
+function renderNCC(){
+  const rows=S.nha_cung_cap.map(n=>`<tr>
+    <td><b>${n.id}</b></td><td>${n.ten}</td><td>${n.dien_thoai}</td><td>${n.email}</td>
+    <td>${n.nguoi_lien_he}</td><td><span class="badge b-green">${n.trang_thai}</span></td>
+    <td><button class="btn btn-ghost btn-sm" onclick="editNCC('${n.id}')">✏️ Sửa</button></td>
+  </tr>`).join('');
+  return `<div style="margin-bottom:1rem"><button class="btn btn-primary" onclick="addNCC()">+ Thêm nhà cung cấp</button></div>
+  <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Tên NCC</th><th>Điện thoại</th><th>Email</th><th>Người LH</th><th>TT</th><th></th></tr></thead>
+  <tbody>${rows}</tbody></table></div></div>`;
+}
+function renderHopDong(){
+  const rows=S.hop_dong.map(h=>{const n=S.nha_cung_cap.find(x=>x.id===h.ncc_id);return`<tr>
+    <td><b>${h.id}</b></td><td>${n?n.ten:'—'}</td><td>${h.so_hop_dong}</td><td>${h.ngay_ky}</td><td>${h.ngay_het_han}</td>
+    <td>${fmt(h.gia_tri)}</td><td><span class="badge ${h.trang_thai==='Còn hiệu lực'?'b-green':'b-red'}">${h.trang_thai}</span></td>
+  </tr>`;}).join('');
+  return `<div style="margin-bottom:1rem"><button class="btn btn-primary" onclick="addHopDong()">+ Thêm hợp đồng</button></div>
+  <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Mã HĐ</th><th>Nhà cung cấp</th><th>Số HĐ</th><th>Ngày ký</th><th>Hết hạn</th><th>Giá trị</th><th>TT</th></tr></thead>
+  <tbody>${rows||'<tr><td colspan="7" style="text-align:center;color:var(--text3)">Chưa có hợp đồng</td></tr>'}</tbody></table></div></div>`;
+}
+function renderThanhToan(){
+  const rows=S.thanh_toan.map(t=>{const n=S.nha_cung_cap.find(x=>x.id===t.ncc_id);return`<tr>
+    <td><b>${t.id}</b></td><td>${n?n.ten:'—'}</td><td>${t.hop_dong_id}</td>
+    <td style="font-weight:700;color:var(--green)">${fmt(t.so_tien)}</td>
+    <td>${t.ngay_thanh_toan}</td><td>${t.hinh_thuc}</td><td style="font-size:12px;color:var(--text2)">${t.ghi_chu}</td>
+  </tr>`;}).join('');
+  return `<div style="margin-bottom:1rem"><button class="btn btn-primary" onclick="addThanhToan()">+ Ghi nhận thanh toán</button></div>
+  <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Mã TT</th><th>Nhà cung cấp</th><th>Hợp đồng</th><th>Số tiền</th><th>Ngày TT</th><th>Hình thức</th><th>Ghi chú</th></tr></thead>
+  <tbody>${rows||'<tr><td colspan="7" style="text-align:center;color:var(--text3)">Chưa có lịch sử thanh toán</td></tr>'}</tbody></table></div></div>`;
+}
+function addNCC(){
+  openModal(`<div class="modal"><div class="modal-hd"><h3>🏭 Thêm nhà cung cấp mới</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow full"><label class="field-label">Tên nhà cung cấp *</label><input class="field-input" id="f-ten" placeholder="Tên công ty..."></div>
+    <div class="frow"><div><label class="field-label">Mã số thuế</label><input class="field-input" id="f-mst" placeholder="MST..."></div>
+    <div><label class="field-label">Điện thoại *</label><input class="field-input" id="f-dt" placeholder="090..."></div></div>
+    <div class="frow"><div><label class="field-label">Email</label><input class="field-input" id="f-email" placeholder="email@..."></div>
+    <div><label class="field-label">Người liên hệ</label><input class="field-input" id="f-nlh" placeholder="Tên người liên hệ..."></div></div>
+    <div class="frow full"><label class="field-label">Địa chỉ</label><input class="field-input" id="f-dc" placeholder="Địa chỉ..."></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveNCC()">💾 Lưu</button></div></div>`);
+}
+function saveNCC(){
+  const ten=v('f-ten'),dt=v('f-dt');
+  if(!ten||!dt){toast('Vui lòng điền tên và điện thoại','error');return;}
+  S.seq_counter.ncc=(S.seq_counter.ncc||2)+1;
+  const id='NCC'+String(S.seq_counter.ncc).padStart(3,'0');
+  S.nha_cung_cap.push({id,ten,ma_so_thue:v('f-mst'),dien_thoai:dt,email:v('f-email'),dia_chi:v('f-dc'),nguoi_lien_he:v('f-nlh'),trang_thai:'Đang hợp tác',ghichu:''});
+  saveStore();closeModal();toast('Đã thêm nhà cung cấp '+ten);pgNCC();
+}
+function editNCC(id){
+  const n=S.nha_cung_cap.find(x=>x.id===id);if(!n)return;
+  openModal(`<div class="modal"><div class="modal-hd"><h3>✏️ Cập nhật nhà cung cấp — ${n.id}</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow full"><label class="field-label">Tên nhà cung cấp *</label><input class="field-input" id="f-ten" value="${n.ten}"></div>
+    <div class="frow"><div><label class="field-label">Điện thoại</label><input class="field-input" id="f-dt" value="${n.dien_thoai}"></div>
+    <div><label class="field-label">Email</label><input class="field-input" id="f-email" value="${n.email}"></div></div>
+    <div class="frow"><div><label class="field-label">Người liên hệ</label><input class="field-input" id="f-nlh" value="${n.nguoi_lien_he}"></div>
+    <div><label class="field-label">Trạng thái</label><select class="field-input" id="f-tt"><option ${n.trang_thai==='Đang hợp tác'?'selected':''}>Đang hợp tác</option><option ${n.trang_thai==='Ngừng hợp tác'?'selected':''}>Ngừng hợp tác</option></select></div></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveEditNCC('${id}')">💾 Lưu</button></div></div>`);
+}
+function saveEditNCC(id){
+  const n=S.nha_cung_cap.find(x=>x.id===id);if(!n)return;
+  n.ten=v('f-ten');n.dien_thoai=v('f-dt');n.email=v('f-email');n.nguoi_lien_he=v('f-nlh');n.trang_thai=v('f-tt');
+  saveStore();closeModal();toast('Đã cập nhật nhà cung cấp '+n.ten);pgNCC();
+}
+function addHopDong(){
+  const nccOpts=S.nha_cung_cap.map(n=>`<option value="${n.id}">${n.ten}</option>`).join('');
+  openModal(`<div class="modal"><div class="modal-hd"><h3>📄 Thêm hợp đồng mới</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow full"><label class="field-label">Nhà cung cấp *</label><select class="field-input" id="f-ncc">${nccOpts}</select></div>
+    <div class="frow"><div><label class="field-label">Số hợp đồng *</label><input class="field-input" id="f-so" placeholder="HĐ-2025-001"></div>
+    <div><label class="field-label">Giá trị (VND)</label><input class="field-input" id="f-gt" type="number" value="0"></div></div>
+    <div class="frow"><div><label class="field-label">Ngày ký</label><input class="field-input" id="f-nk" type="date" value="${today()}"></div>
+    <div><label class="field-label">Ngày hết hạn</label><input class="field-input" id="f-nhh" type="date"></div></div>
+    <div class="frow full"><label class="field-label">Nội dung</label><textarea class="field-input" id="f-nd" placeholder="Nội dung hợp đồng..."></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveHopDong()">💾 Lưu hợp đồng</button></div></div>`);
+}
+function saveHopDong(){
+  const ncc=v('f-ncc'),so=v('f-so'),gt=parseInt(v('f-gt'))||0,nk=v('f-nk'),nhh=v('f-nhh'),nd=v('f-nd');
+  if(!ncc||!so){toast('Vui lòng điền đầy đủ','error');return;}
+  S.seq_counter.hd=(S.seq_counter.hd||1)+1;
+  const id='HD'+String(S.seq_counter.hd).padStart(3,'0');
+  S.hop_dong.push({id,ncc_id:ncc,so_hop_dong:so,ngay_ky:nk,ngay_het_han:nhh,gia_tri:gt,noi_dung:nd,trang_thai:'Còn hiệu lực'});
+  saveStore();closeModal();toast('Đã thêm hợp đồng '+id);pgNCC();
+}
+function addThanhToan(){
+  const nccOpts=S.nha_cung_cap.map(n=>`<option value="${n.id}">${n.ten}</option>`).join('');
+  const hdOpts=S.hop_dong.map(h=>`<option value="${h.id}">${h.id} — ${h.so_hop_dong}</option>`).join('');
+  openModal(`<div class="modal"><div class="modal-hd"><h3>💳 Ghi nhận thanh toán</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow"><div><label class="field-label">Nhà cung cấp *</label><select class="field-input" id="f-ncc">${nccOpts}</select></div>
+    <div><label class="field-label">Hợp đồng</label><select class="field-input" id="f-hd">${hdOpts}</select></div></div>
+    <div class="frow"><div><label class="field-label">Số tiền (VND) *</label><input class="field-input" id="f-st" type="number" min="0" value="0"></div>
+    <div><label class="field-label">Ngày thanh toán *</label><input class="field-input" id="f-ngay" type="date" value="${today()}"></div></div>
+    <div class="frow"><div><label class="field-label">Hình thức</label><select class="field-input" id="f-ht"><option>Chuyển khoản</option><option>Tiền mặt</option><option>Séc</option></select></div>
+    <div><label class="field-label">Ghi chú</label><input class="field-input" id="f-gc" placeholder="Ghi chú..."></div></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-success" onclick="saveThanhToan()">✅ Xác nhận thanh toán</button></div></div>`);
+}
+function saveThanhToan(){
+  const st=parseInt(v('f-st'))||0,ngay=v('f-ngay');
+  if(st<=0||!ngay){toast('Vui lòng nhập số tiền và ngày','error');return;}
+  S.seq_counter.tt=(S.seq_counter.tt||1)+1;
+  const id='TT'+String(S.seq_counter.tt).padStart(3,'0');
+  S.thanh_toan.push({id,ncc_id:v('f-ncc'),hop_dong_id:v('f-hd'),so_tien:st,ngay_thanh_toan:ngay,hinh_thuc:v('f-ht'),ghi_chu:v('f-gc')});
+  saveStore();closeModal();toast('Đã ghi nhận thanh toán '+id+' — '+fmt(st));pgNCC();
+}
+
+/* ═══════════════════════════════
+   TÀI CHÍNH
+═══════════════════════════════ */
+function pgTaiChinh(){
+  const b=S.ngan_sach;const pct=Math.round(b.da_su_dung/b.tong*100);
+  const rows=S.tai_chinh.slice().reverse().map(t=>`<tr>
+    <td><b>${t.id}</b></td><td>${t.loai}</td><td>${t.muc_dich}</td>
+    <td style="font-weight:700;color:${t.loai==='Cấp phát'?'var(--green)':'var(--red)'}">${t.loai==='Cấp phát'?'+':'-'}${fmt(t.so_tien)}</td>
+    <td>${t.nguoi_tao}</td><td>${t.ngay}</td>
+    <td><span class="badge ${t.trang_thai==='Đã duyệt'?'b-green':t.trang_thai==='Từ chối'?'b-red':'b-amber'}">${t.trang_thai}</span></td>
+    <td>${t.trang_thai==='Đang chờ'?`<div style="display:flex;gap:4px"><button class="btn btn-success btn-sm" onclick="duyetTC('${t.id}','duyet')">✅</button><button class="btn btn-danger btn-sm" onclick="duyetTC('${t.id}','tuchoi')">❌</button></div>`:'—'}</td>
+  </tr>`).join('');
+  const bsRows=S.bo_sung.filter(b=>b.trang_thai==='Đang chờ duyệt').map(b=>`<tr>
+    <td><b>${b.id}</b></td><td>${b.loai_tb}</td><td style="text-align:center">${b.so_luong}</td>
+    <td>${fmt(b.du_kien_gia)}</td><td>${b.ly_do}</td><td>${b.nguoi_tao}</td>
+    <td><div style="display:flex;gap:4px"><button class="btn btn-success btn-sm" onclick="duyetBS('${b.id}','duyet')">✅ Duyệt</button><button class="btn btn-danger btn-sm" onclick="duyetBS('${b.id}','tuchoi')">❌</button></div></td>
+  </tr>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>💰 Quản lý tài chính nhập thiết bị</h2></div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:1.25rem;margin-bottom:1.25rem">
+      <div class="card-title">Ngân sách thiết bị</div>
+      <div class="stats-row" style="margin-bottom:.75rem">
+        <div class="stat green"><div class="stat-num">${fmt(b.tong)}</div><div class="stat-lbl">Tổng ngân sách</div></div>
+        <div class="stat red"><div class="stat-num">${fmt(b.da_su_dung)}</div><div class="stat-lbl">Đã sử dụng</div></div>
+        <div class="stat blue"><div class="stat-num">${fmt(b.tong-b.da_su_dung)}</div><div class="stat-lbl">Còn lại</div></div>
+        <div class="stat ${pct>80?'red':'amber'}"><div class="stat-num">${pct}%</div><div class="stat-lbl">Tỷ lệ sử dụng</div></div>
+      </div>
+      <div style="height:12px;background:#e2e8f0;border-radius:6px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${pct>80?'var(--red)':pct>60?'var(--amber)':'var(--green)'};border-radius:6px;transition:.3s"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:.75rem">
+        <button class="btn btn-ghost btn-sm" onclick="editNganSach()">⚙️ Cập nhật ngân sách</button>
+      </div>
+    </div>
+    <div class="ptabs">
+      <div class="ptab active" onclick="switchTab(this,'tc-tc')">Phiếu tài chính</div>
+      <div class="ptab" onclick="switchTab(this,'tc-bs')">Yêu cầu bổ sung TB <span class="badge b-amber" style="margin-left:4px">${S.bo_sung.filter(b=>b.trang_thai==='Đang chờ duyệt').length}</span></div>
+    </div>
+    <div id="tc-tc" class="ptab-content active">
+      <div style="margin-bottom:1rem"><button class="btn btn-primary" onclick="taoPhieuTC()">+ Tạo phiếu tài chính</button></div>
+      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Loại</th><th>Mục đích</th><th>Số tiền</th><th>Người tạo</th><th>Ngày</th><th>TT</th><th></th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="8"><div class="empty"><div class="empty-icon">💰</div><p>Chưa có phiếu tài chính</p></div></td></tr>'}</tbody></table></div></div>
+    </div>
+    <div id="tc-bs" class="ptab-content">
+      <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Loại TB</th><th>SL</th><th>Dự kiến giá</th><th>Lý do</th><th>Người tạo</th><th>Hành động</th></tr></thead>
+      <tbody>${bsRows||'<tr><td colspan="7"><div class="empty"><div class="empty-icon">✅</div><p>Không có yêu cầu bổ sung chờ duyệt</p></div></td></tr>'}</tbody></table></div></div>
+    </div>`;
+}
+function editNganSach(){
+  const b=S.ngan_sach;
+  openModal(`<div class="modal"><div class="modal-hd"><h3>⚙️ Cập nhật ngân sách</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow"><div><label class="field-label">Tổng ngân sách (VND)</label><input class="field-input" id="f-tong" type="number" value="${b.tong}"></div>
+    <div><label class="field-label">Đã sử dụng (VND)</label><input class="field-input" id="f-dusd" type="number" value="${b.da_su_dung}"></div></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="saveNganSach()">💾 Lưu</button></div></div>`);
+}
+function saveNganSach(){
+  S.ngan_sach.tong=parseInt(v('f-tong'))||0;S.ngan_sach.da_su_dung=parseInt(v('f-dusd'))||0;
+  saveStore();closeModal();toast('Đã cập nhật ngân sách');pgTaiChinh();
+}
+function taoPhieuTC(){
+  openModal(`<div class="modal"><div class="modal-hd"><h3>💰 Tạo phiếu tài chính</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="frow"><div><label class="field-label">Loại *</label><select class="field-input" id="f-loai"><option>Cấp phát</option><option>Yêu cầu cấp</option><option>Hoàn trả</option></select></div>
+    <div><label class="field-label">Số tiền (VND) *</label><input class="field-input" id="f-st" type="number" min="0" value="0"></div></div>
+    <div class="frow full"><label class="field-label">Mục đích *</label><input class="field-input" id="f-md" placeholder="Mô tả mục đích..."></div>
+    <div class="frow full"><label class="field-label">Ghi chú</label><textarea class="field-input" id="f-gc" placeholder="Ghi chú thêm..."></textarea></div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Hủy</button><button class="btn btn-primary" onclick="savePhieuTC()">📤 Gửi yêu cầu</button></div></div>`);
+}
+function savePhieuTC(){
+  const loai=v('f-loai'),st=parseInt(v('f-st'))||0,md=v('f-md');
+  if(st<=0||!md){toast('Vui lòng điền đầy đủ','error');return;}
+  S.seq_counter.tc=(S.seq_counter.tc||0)+1;
+  const id='TC'+String(S.seq_counter.tc).padStart(3,'0');
+  S.tai_chinh.push({id,loai,so_tien:st,muc_dich:md,nguoi_tao:currentUser,ngay:today(),trang_thai:loai==='Cấp phát'?'Đã duyệt':'Đang chờ',ghichu:v('f-gc')});
+  if(loai==='Cấp phát')S.ngan_sach.da_su_dung+=st;
+  saveStore();closeModal();toast('Đã tạo phiếu tài chính '+id);pgTaiChinh();
+}
+function duyetTC(id,action){
+  const t=S.tai_chinh.find(x=>x.id===id);if(!t)return;
+  if(action==='duyet'){t.trang_thai='Đã duyệt';S.ngan_sach.da_su_dung+=t.so_tien;toast('Đã duyệt phiếu '+id+' ✅');}
+  else{t.trang_thai='Từ chối';toast('Đã từ chối phiếu '+id);}
+  saveStore();pgTaiChinh();
+}
+function duyetBS(id,action){
+  const b=S.bo_sung.find(x=>x.id===id);if(!b)return;
+  if(action==='duyet'){b.trang_thai='Đã duyệt';toast('Đã duyệt yêu cầu bổ sung '+id+' ✅');}
+  else{b.trang_thai='Từ chối';toast('Đã từ chối yêu cầu '+id);}
+  saveStore();pgTaiChinh();
+}
+
+/* ═══════════════════════════════
+   BỔ SUNG THIẾT BỊ (đơn vị SD)
+═══════════════════════════════ */
+function pgBoSungTB(){
+  const myBS=S.bo_sung.filter(b=>b.nguoi_tao===currentUser);
+  const rows=myBS.slice().reverse().map(b=>`<tr>
+    <td><b>${b.id}</b></td><td>${b.loai_tb}</td><td style="text-align:center">${b.so_luong}</td>
+    <td>${fmt(b.du_kien_gia)}</td><td style="font-size:12px">${b.ly_do}</td><td>${b.ngay_tao}</td>
+    <td><span class="badge ${b.trang_thai==='Đã duyệt'?'b-green':b.trang_thai==='Từ chối'?'b-red':'b-amber'}">${b.trang_thai}</span></td>
+  </tr>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>➕ Yêu cầu bổ sung thiết bị mới</h2><p>Đề xuất bổ sung loại thiết bị chưa có trong hệ thống</p></div>
+    <div class="card" style="max-width:560px;margin-bottom:1.25rem">
+      <div class="card-title">Tạo yêu cầu bổ sung mới</div>
+      <div class="fgroup"><label class="field-label">Loại thiết bị cần bổ sung *</label><input class="field-input" id="bs-loai" placeholder="Tên loại thiết bị mới..."></div>
+      <div class="frow"><div><label class="field-label">Số lượng cần *</label><input class="field-input" id="bs-sl" type="number" min="1" value="1"></div>
+      <div><label class="field-label">Giá ước tính (VND)</label><input class="field-input" id="bs-gia" type="number" min="0" value="0"></div></div>
+      <div class="fgroup"><label class="field-label">Lý do / Mục đích sử dụng *</label><textarea class="field-input" id="bs-lydo" placeholder="Mô tả lý do cần bổ sung thiết bị này..."></textarea></div>
+      <button class="btn btn-primary" onclick="saveBoSung()">📤 Gửi yêu cầu bổ sung</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Yêu cầu bổ sung của bạn</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Mã</th><th>Loại thiết bị</th><th>SL</th><th>Giá ước tính</th><th>Lý do</th><th>Ngày tạo</th><th>TT</th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="7"><div class="empty"><div class="empty-icon">➕</div><p>Chưa có yêu cầu bổ sung nào</p></div></td></tr>'}</tbody></table></div>
+    </div>`;
+}
+function saveBoSung(){
+  const loai=v('bs-loai'),sl=parseInt(v('bs-sl'))||0,gia=parseInt(v('bs-gia'))||0,lydo=v('bs-lydo');
+  if(!loai||sl<1||!lydo){toast('Vui lòng điền đầy đủ thông tin','error');return;}
+  const exists=S.thietbi.some(t=>t.ten.toLowerCase().includes(loai.toLowerCase())||t.loai.toLowerCase().includes(loai.toLowerCase()));
+  if(exists){toast('Loại thiết bị này đã có trong hệ thống. Vui lòng kiểm tra lại.','error');return;}
+  S.seq_counter.bs=(S.seq_counter.bs||0)+1;
+  const id='BS'+String(S.seq_counter.bs).padStart(3,'0');
+  S.bo_sung.push({id,loai_tb:loai,so_luong:sl,du_kien_gia:gia,ly_do:lydo,nguoi_tao:currentUser,ngay_tao:today(),trang_thai:'Đang chờ duyệt'});
+  saveStore();toast('Đã gửi yêu cầu bổ sung '+id+' — Chờ quản lý phê duyệt');pgBoSungTB();
+}
+
+/* ═══════════════════════════════
+   BÁO CÁO
+═══════════════════════════════ */
+function pgBaoCao(){
+  document.getElementById('main').innerHTML=`
+    <div class="page-hd"><h2>📊 Báo cáo & Thống kê</h2></div>
+    <div class="ptabs">
+      <div class="ptab active" onclick="switchTab(this,'bc-tao')">Tạo báo cáo</div>
+      <div class="ptab" onclick="switchTab(this,'bc-ds')">Danh sách báo cáo</div>
+      <div class="ptab" onclick="switchTab(this,'bc-tke')">Thống kê nhanh</div>
+    </div>
+    <div id="bc-tao" class="ptab-content active">
+      <div class="card" style="max-width:520px">
+        <div class="card-title">Tạo báo cáo mới</div>
+        <div class="fgroup"><label class="field-label">Loại báo cáo *</label><select class="field-input" id="bc-loai"><option>Báo cáo nhập kho</option><option>Báo cáo xuất kho</option><option>Báo cáo kiểm kê</option><option>Báo cáo bảo trì</option><option>Báo cáo tổng hợp thiết bị</option><option>Báo cáo tài chính</option></select></div>
+        <div class="frow"><div><label class="field-label">Từ ngày</label><input class="field-input" id="bc-from" type="date" value="2025-01-01"></div>
+        <div><label class="field-label">Đến ngày</label><input class="field-input" id="bc-to" type="date" value="${today()}"></div></div>
+        <div class="fgroup"><label class="field-label">Ghi chú</label><input class="field-input" id="bc-gc" placeholder="Ghi chú báo cáo..."></div>
+        <button class="btn btn-primary" onclick="taoBaoCao()">📊 Tạo và lưu báo cáo</button>
+      </div>
+    </div>
+    <div id="bc-ds" class="ptab-content">${renderDSBaoCao()}</div>
+    <div id="bc-tke" class="ptab-content">${renderThongKe()}</div>`;
+}
+function renderDSBaoCao(){
+  const rows=S.bao_cao.slice().reverse().map(b=>`<tr>
+    <td><b>${b.id}</b></td><td>${b.loai}</td><td>${b.tu_ngay} → ${b.den_ngay}</td>
+    <td>${b.nguoi_tao}</td><td>${b.ngay_tao}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="xemBaoCao('${b.id}')">👁️ Xem</button></td>
+  </tr>`).join('');
+  return `<div class="card"><div class="tbl-wrap"><table><thead><tr><th>Mã BC</th><th>Loại</th><th>Khoảng thời gian</th><th>Người tạo</th><th>Ngày tạo</th><th></th></tr></thead>
+  <tbody>${rows||'<tr><td colspan="6"><div class="empty"><div class="empty-icon">📊</div><p>Chưa có báo cáo nào</p></div></td></tr>'}</tbody></table></div></div>`;
+}
+function renderThongKe(){
+  const totalTB=S.thietbi.length;
+  const totalSL=S.thietbi.reduce((a,b)=>a+b.so_luong,0);
+  const totalKho=S.thietbi.reduce((a,b)=>a+b.so_luong_kho,0);
+  const totalNhap=S.nhap_kho.reduce((a,b)=>a+b.so_luong,0);
+  const totalXuat=S.xuat_kho.reduce((a,b)=>a+b.so_luong,0);
+  const totalYC=S.yeu_cau.length;
+  const ycDuyet=S.yeu_cau.filter(y=>y.trang_thai==='Đã duyệt'||y.trang_thai==='Đã xuất kho').length;
+  const tbHong=S.tb_hong.filter(t=>t.trang_thai!=='Hoàn thành').length;
+  return `<div class="stats-row">
+    <div class="stat blue"><div class="stat-num">${totalTB}</div><div class="stat-lbl">Loại thiết bị</div></div>
+    <div class="stat green"><div class="stat-num">${totalKho}</div><div class="stat-lbl">SL trong kho</div></div>
+    <div class="stat amber"><div class="stat-num">${totalNhap}</div><div class="stat-lbl">Tổng đã nhập</div></div>
+    <div class="stat purple"><div class="stat-num">${totalXuat}</div><div class="stat-lbl">Tổng đã xuất</div></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat blue"><div class="stat-num">${totalYC}</div><div class="stat-lbl">Tổng yêu cầu</div></div>
+    <div class="stat green"><div class="stat-num">${ycDuyet}</div><div class="stat-lbl">YC đã duyệt</div></div>
+    <div class="stat red"><div class="stat-num">${tbHong}</div><div class="stat-lbl">TB đang hỏng</div></div>
+    <div class="stat amber"><div class="stat-num">${S.bao_tri.length}</div><div class="stat-lbl">Lịch bảo trì</div></div>
+  </div>`;
+}
+function taoBaoCao(){
+  const loai=v('bc-loai'),from=v('bc-from'),to=v('bc-to'),gc=v('bc-gc');
+  if(!from||!to){toast('Vui lòng chọn khoảng thời gian','error');return;}
+  S.seq_counter.bc=(S.seq_counter.bc||0)+1;
+  const id='BC'+String(S.seq_counter.bc).padStart(3,'0');
+  S.bao_cao.push({id,loai,tu_ngay:from,den_ngay:to,nguoi_tao:currentUser,ngay_tao:today(),ghichu:gc});
+  saveStore();toast('Đã tạo và lưu báo cáo '+id);pgBaoCao();
+}
+function xemBaoCao(id){
+  const b=S.bao_cao.find(x=>x.id===id);if(!b)return;
+  openModal(`<div class="modal"><div class="modal-hd"><h3>📊 Báo cáo — ${b.id}</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+  <div class="modal-body">
+    <div class="info-grid">
+      <div class="info-field"><label>Loại báo cáo</label><p>${b.loai}</p></div>
+      <div class="info-field"><label>Người tạo</label><p>${b.nguoi_tao}</p></div>
+      <div class="info-field"><label>Từ ngày</label><p>${b.tu_ngay}</p></div>
+      <div class="info-field"><label>Đến ngày</label><p>${b.den_ngay}</p></div>
+    </div>
+    <div style="margin-top:1rem;padding:1rem;background:#f8fafc;border-radius:var(--r);font-size:13px;color:var(--text2)">
+      <b>Tóm tắt:</b> Báo cáo ${b.loai} từ ${b.tu_ngay} đến ${b.den_ngay}.<br>
+      ${b.ghichu?`<br><b>Ghi chú:</b> ${b.ghichu}`:''}
+    </div>
+  </div>
+  <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal()">Đóng</button></div></div>`);
+}
+
+/* ═══════════════════════════════
+   HELPERS
+═══════════════════════════════ */
+function v(id){return(document.getElementById(id)?.value||'').trim();}
+function switchTab(el,targetId){
+  const parent=el.closest('.ptab-content')?.parentElement||el.parentElement?.nextElementSibling?.parentElement||document.getElementById('main');
+  const ptabs=el.parentElement;
+  ptabs.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  // find all ptab-content siblings
+  const contents=parent.querySelectorAll('.ptab-content');
+  contents.forEach(c=>{c.classList.toggle('active',c.id===targetId);});
+}
+
+// Enter key on login
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('login').style.display!=='none')login();});
+</script>
+</body>
+</html>
